@@ -2,6 +2,7 @@ import sqlite3
 
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
+
 __VERSION__ = 5.126
 __DB__ = 'vk.db'
 __ADMINGROUP__ = ['admin', 'head', 'test']
@@ -75,7 +76,6 @@ class Users:
                 'UPDATE `users` SET `post_filters`=? WHERE `id`=?', (sql, self.id))
             db.commit()
         
-
     def colorSpam(self):
         if self.mailing == 1:
             return VkKeyboardColor.POSITIVE
@@ -95,6 +95,41 @@ class Users:
                 keyboard.add_line()
                 keyboard.add_button('Изменить роль')
         return keyboard
+    
+    def getOtherUser(self, parametry = ''):
+        sql = 'SELECT `id` FROM `users` WHERE `id`<>{}'.format(self.id) + parametry 
+        with sqlite3.connect(__DB__) as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            users = []
+            for user in result: users.append(user[0])
+        return users
+
+    def reStarus(self, role):
+        sql = 'UPDATE `users` SET `status`=? WHERE `id`=?'.format(role, self.id)
+        with sqlite3.connect(__DB__) as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            db.commit()
+    
+    def createdSubscribe(self, vk_session):
+        sql_1 = 'SELECT `id` FROM `users` WHERE `id`<>{}'.format(self.id,)
+        sql_2 = 'DELETE FROM `subscriber`'
+        listname = ''
+        with sqlite3.connect(__DB__) as db:
+            cursor = db.cursor()
+            cursor.execute(sql_1)
+            result = cursor.fetchall()
+            cursor.execute(sql_2)
+            i = 1
+            for subscriber in result:
+                info = vk_session.method('users.get', {'user_ids': subscriber[0], 'name_case': 'Nom'})[0]
+                cursor.execute('INSERT INTO `subscriber` VALUES (?,?)',(subscriber[0],i))
+                db.commit()
+                listname += '{0} - {1} {2}\n'.format(i, info['first_name'], info['last_name'])
+                i += 1
+        return listname
 
 class Events:
     def __init__(self, type, event):

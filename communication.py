@@ -73,41 +73,19 @@ def commands_plus(command, user):
             listname = ''
             keyboard = VkKeyboard(one_time=True)
             keyboard.add_button('Отмена', color=VkKeyboardColor.NEGATIVE)
-            with sqlite3.connect(__DB__) as db:
-                cursor = db.cursor()
-                cursor.execute('SELECT `id` FROM `users` WHERE NOT `id`=?',(user.id,))
-                result = cursor.fetchall()
-                cursor.execute('DELETE FROM `subscriber`')
-                db.commit()
-                i = 1
-                for subscriber in result:
-                    info = vk_session.method('users.get', {'user_ids' : subscriber[0], 'name_case':'Nom'})[0]
-                    cursor.execute('INSERT INTO `subscriber` VALUES (?,?)',
-                                   (subscriber[0],i))
-                    db.commit()
-                    listname += '{0} - {1} {2}\n'.format(i,
-                                                       info['first_name'], 
-                                                       info['last_name'])
-                    i += 1
-            vk_session.method('messages.send', {'user_id' : user.id, 'random_id': get_random_id(), 'message': 'Список \n' + listname + 'Доступные роли: user, head, admin, test \n`Роль номер',
+            vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(), 'message': 'Список \n' + user.createdSubscribe(vk_session) + 'Доступные роли: user, head, admin, test \n`Роль номер',
                                                 'keyboard': keyboard.get_keyboard()})
             user.work('reRole')
     else:
         if user.lastCommand == 'Spam':
             if not command in ['Отмена', 'отмена']:
-                with sqlite3.connect(__DB__) as db:
-                    cursor = db.cursor()
-                    cursor.execute(
-                        'SELECT `id` FROM `users` WHERE `mailing`=? and `id`<>?', (1,user.id))
-                    user_ids = cursor.fetchall()
-                    for user_id in user_ids:
-                        vk_session.method('messages.send', {
-                            'user_id': user_id, 'random_id': get_random_id(), 'message': command})
-                    vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
+                users = user.getOtherUser(' and `mailing`=1')
+                for user_id in users:
+                    vk_session.method('messages.send', {'user_id': user_id, 'random_id': get_random_id(), 'message': command})
+                vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
                     ), 'message': 'Сообщения успешно всем отправлены', 'keyboard': user.createKeyboard().get_keyboard()})
             else:
-                vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
-                ), 'message': 'Ожидаю другие приказы!', 'keyboard': user.createKeyboard().get_keyboard()})
+                vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(), 'message': 'Ожидаю другие приказы!', 'keyboard': user.createKeyboard().get_keyboard()})
             user.work(None)
         elif user.lastCommand == 'reRole':
             if not command in ['Отмена', 'отмена']:
@@ -119,15 +97,16 @@ def commands_plus(command, user):
                 else: 
                     number = command[6:]
                     role = command[:5]
-                with sqlite3.connect(__DB__) as db:
-                    cursor = db.cursor()
-                    cursor.execute(
-                        'SELECT * FROM `subscriber` WHERE `number`=?', (number,))
-                    result = cursor.fetchone()
-                    cursor.execute('UPDATE `users` SET `status`=? WHERE `id`=?',(role, result[0]))
-                    db.commit()
-                    vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
-                    ), 'message': '{0} успешно получил {1}'.format(result[1], role), 'keyboard': user.createKeyboard().get_keyboard()})
+                    # Работа с sqlite##
+                    sql = 'SELECT * FROM `subscriber` WHERE `number`={}'.format(number)
+                    with sqlite3.connect(__DB__) as db:
+                        cursor = db.cursor()
+                        cursor.execute(sql)
+                        user_id = cursor.fetchone()
+                    ###################
+                        Users(user_id[0]).reStarus(role)
+                        vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
+                    ), 'message': '{0} успешно получил {1}'.format(user_id[1], role), 'keyboard': user.createKeyboard().get_keyboard()})
             else:
                 vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
                 ), 'message': 'Жду другие команды!', 'keyboard': user.createKeyboard().get_keyboard()})
