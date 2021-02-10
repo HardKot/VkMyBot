@@ -1,6 +1,6 @@
 from flask import Flask, request
 #Модули с параметрами, классами
-from options import Events
+from options import Events, __ANSWER__
 #Модули для обработки
 import communication
 import wall
@@ -12,7 +12,7 @@ app = Flask(__name__)
 def events():
     content = request.get_json()
     if content['type'] == 'confirmation':
-        return '80b7006b'
+        return __ANSWER__
     
     event = Events(content['type'], content['object'])
     if event.type == 'message_new':
