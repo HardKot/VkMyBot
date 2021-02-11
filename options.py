@@ -5,7 +5,6 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 __DB__ = os.environ['DATABASE_URL']
 __ANSWER__ = os.environ['ANSWER']
-__ANSWER__ = '848be9af'
 __TOKEN__ = os.environ['VK_TOKEN']
 conn = psycopg2.connect(__DB__, sslmode='require')
 
