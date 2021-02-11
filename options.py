@@ -96,32 +96,30 @@ class Users:
                 keyboard.add_button('Изменить роль')
         return keyboard
     
-    def getOtherUser(self, parametry = ''):
-        sql = 'SELECT `id` FROM `users` WHERE `id`<>{}'.format(self.id) + parametry 
+    def getOtherUser(self, parametry = ''): 
         with sqlite3.connect(__DB__) as db:
             cursor = db.cursor()
-            cursor.execute(sql)
+            cursor.execute(
+                'SELECT `id` FROM `users` WHERE `id`<>?'+ parametry, (self.id,))
             result = cursor.fetchall()
             users = []
             for user in result: users.append(user[0])
         return users
 
     def reStarus(self, role):
-        sql = 'UPDATE `users` SET `status`=? WHERE `id`=?'.format(role, self.id)
         with sqlite3.connect(__DB__) as db:
             cursor = db.cursor()
-            cursor.execute(sql)
+            cursor.execute(
+                'UPDATE `users` SET `status`=? WHERE `id`=?', (role, self.id))
             db.commit()
     
     def createdSubscribe(self, vk_session):
-        sql_1 = 'SELECT `id` FROM `users` WHERE `id`<>{}'.format(self.id,)
-        sql_2 = 'DELETE FROM `subscriber`'
         listname = ''
         with sqlite3.connect(__DB__) as db:
             cursor = db.cursor()
-            cursor.execute(sql_1)
+            cursor.execute('SELECT `id` FROM `users` WHERE `id`<>?',(self.id,))
             result = cursor.fetchall()
-            cursor.execute(sql_2)
+            cursor.execute('DELETE FROM `subscriber`')
             i = 1
             for subscriber in result:
                 info = vk_session.method('users.get', {'user_ids': subscriber[0], 'name_case': 'Nom'})[0]

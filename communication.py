@@ -98,15 +98,17 @@ def commands_plus(command, user):
                     number = command[6:]
                     role = command[:5]
                     # Работа с sqlite##
-                    sql = 'SELECT * FROM `subscriber` WHERE `number`={}'.format(number)
-                    with sqlite3.connect(__DB__) as db:
-                        cursor = db.cursor()
-                        cursor.execute(sql)
-                        user_id = cursor.fetchone()
-                    ###################
-                        Users(user_id[0]).reStarus(role)
-                        vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
-                    ), 'message': '{0} успешно получил {1}'.format(user_id[1], role), 'keyboard': user.createKeyboard().get_keyboard()})
+                sql = 'SELECT * FROM `subscriber` WHERE `number`={}'.format(number)
+                with sqlite3.connect(__DB__) as db:
+                    cursor = db.cursor()
+                    cursor.execute(sql)
+                    user_id = cursor.fetchone()
+                ###################
+                    Users(user_id[0]).reStarus(role)
+                    name = vk_session.method(
+                        'users.get', {'user_ids': user_id[0], 'name_case': 'Nom'})[0]
+                    vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
+                    ), 'message': '{0} {1} успешно получил {2}'.format(name['first_name'], name['last_name'], role), 'keyboard': user.createKeyboard().get_keyboard()})
             else:
                 vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
                 ), 'message': 'Жду другие команды!', 'keyboard': user.createKeyboard().get_keyboard()})
