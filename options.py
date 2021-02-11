@@ -1,15 +1,17 @@
-import sqlite3
-
+import os
+import psycopg2
+from psycopg2 import sql
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
+__DB__ = 'postgres://dyjncdvchbjhck:a82bbc8ebb198a53f4d2cd813de71567d6e83a77c1badbc2b566bc80cae6b524@ec2-18-204-74-74.compute-1.amazonaws.com:5432/d5cm5funm5p2mq'
+__ANSWER__ = os.environ['ANSWER']
+__ANSWER__ = '848be9af'
+__TOKEN__ = os.environ['VK_TOKEN']
+conn = psycopg2.connect(__DB__, sslmode='require')
 
 __VERSION__ = 5.126
-__DB__ = 'vk.db'
 __ADMINGROUP__ = ['admin', 'head', 'test']
-__DEBUGMODE__ = True
-__TOKEN__ = 'f242d960b5b7ed0a298ea1518a9917083ff2f436784f5fc7432fa2f3f09336c5a17da5ea3174cd4f6e151'
 __POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные']
-__ANSWER__ = '8de15fe6'
 
 def POSTFILTERS():
     i = 1
@@ -19,51 +21,70 @@ def POSTFILTERS():
         i+=1
     return text
 
+def CREATEDB():
+    table_user_sql = 'CREATE TABLE "users"("id"	INTEGER, "status"	TEXT, "mailing"     INTEGER, "last_command"     TEXT, "post_filters"    TEXT)'
+    table_subscribe_sql = 'CREATE TABLE "subscriber" ("id"  INTEGER, "number"    INTEGER)'
+    admin_user_sql = 'INSERT INTO "users"("id", "status", "mailing", "post_filters") VALUES ( %s, %s, %s, %s)'
+    with conn.cursor() as cursor:
+        #conn.autocommit = True
+        cursor.execute(table_user_sql)
+        conn.commit()
+        cursor.execute(table_subscribe_sql)
+        conn.commit()
+        cursor.execute(admin_user_sql,(__FIRSTADMIN__, 'admin', 1, ''))
+        conn.commit()
+
+def CHECKDB():
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT * FROM "users"')
+    except:
+        cursor.close()
+        return False
+    cursor.close()
+    return True
+
 class Users:
     def __init__(self, id):
         self.id = id
-        db = sqlite3.connect(__DB__)
-        cursor = db.cursor()
-        try:
-            cursor.execute('SELECT * FROM `users` WHERE `id`=?',
-                            (self.id,))
-            result = cursor.fetchone()
-            self.status = result[1]
-            self.mailing = result[2]
-            self.lastCommand = result[3]
-            self.postFilter = []
-            for symbol in result[4]: 
-                self.postFilter.append(__POSTFILTERS__[int(symbol)-1])
-        except:
-            self.status = 'user'
-            self.mailing = 1
-            self.lastCommand = None
-            self.postFilter = []
-            cursor.execute('INSERT INTO `users`(`id`, `status`, `mailing`,`post_filters`) VALUES (?,?,?,?)',
-                            (self.id, self.status, self.mailing, ''))
-            db.commit()
-        db.close()
+        with conn.cursor() as cursor:
+            try:
+                cursor.execute('SELECT * FROM "users" WHERE "id"=%s',
+                                (self.id,))
+                result = cursor.fetchone()
+                self.status = result[1]
+                self.mailing = result[2]
+                self.lastCommand = result[3]
+                self.postFilter = []
+                for symbol in result[4]: 
+                    self.postFilter.append(__POSTFILTERS__[int(symbol)-1])
+            except:
+                ##conn.autocommit = True
+                self.status = 'user'
+                self.mailing = 1
+                self.lastCommand = None
+                self.postFilter = []
+                cursor.execute('INSERT INTO "users"("id", "status", "mailing","post_filters") VALUES (%s,%s,%s,%s)',
+                                (self.id, self.status, self.mailing, ''))
+                conn.commit()
 
     def checkWork(self):
         return self.lastCommand
 
     def work(self, command):
         self.lastCommand = command
-        db = sqlite3.connect(__DB__)
-        cursor = db.cursor()
-        cursor.execute(
-            'UPDATE `users` SET `last_command`=? WHERE `id`=?', (self.lastCommand, self.id))
-        db.commit()
-        db.close()
-
+        with conn.cursor() as cursor:
+            cursor.execute(
+            'UPDATE "users" SET "last_command"=%s WHERE "id"=%s', (self.lastCommand, self.id))
+            conn.commit()
+    
     def reSpam(self):
         self.mailing = -1 if self.mailing == 1 else self.mailing + 2
-        db = sqlite3.connect(__DB__)
-        cursor = db.cursor()
-        cursor.execute(
-            'UPDATE `users` SET `mailing`=? WHERE `id`=?', (self.mailing, self.id))
-        db.commit()
-        db.close()
+        with conn.cursor() as cursor:
+            #conn.autocommit = True
+            cursor.execute(
+                'UPDATE "users" SET "mailing"=%s WHERE "id"=%s', (self.mailing, self.id))
+            conn.commit()
 
     def reFilter(self, listfilter):
         self.postFilter = []
@@ -71,11 +92,11 @@ class Users:
         for symbol in listfilter:
             self.postFilter.append(__POSTFILTERS__[int(symbol)-1])
             sql += str(int(symbol))
-        with sqlite3.connect(__DB__) as db:
-            cursor = db.cursor()
+        with conn.cursor() as cursor:
+            #conn.autocommit = True
             cursor.execute(
-                'UPDATE `users` SET `post_filters`=? WHERE `id`=?', (sql, self.id))
-            db.commit()
+                'UPDATE "users" SET "post_filters"=%s WHERE "id"=%s', (sql, self.id))
+            conn.commit()
         
     def colorSpam(self):
         if self.mailing == 1:
@@ -98,36 +119,36 @@ class Users:
         return keyboard
     
     def getOtherUser(self, parametry = ''): 
-        with sqlite3.connect(__DB__) as db:
-            cursor = db.cursor()
+        with conn.cursor() as cursor:
             cursor.execute(
-                'SELECT `id` FROM `users` WHERE `id`<>?'+ parametry, (self.id,))
+                'SELECT "id" FROM "users" WHERE "id"<>%s'+ parametry, (self.id,))
             result = cursor.fetchall()
             users = []
             for user in result: users.append(user[0])
+            conn.commit()
         return users
 
     def reStarus(self, role):
-        with sqlite3.connect(__DB__) as db:
-            cursor = db.cursor()
+        with conn.cursor() as cursor:
+            ##conn.autocommit = True
             cursor.execute(
-                'UPDATE `users` SET `status`=? WHERE `id`=?', (role, self.id))
-            db.commit()
+                'UPDATE "users" SET "status"=%s WHERE "id"=%s', (role, self.id))
+            conn.commit()
     
     def createdSubscribe(self, vk_session):
         listname = ''
-        with sqlite3.connect(__DB__) as db:
-            cursor = db.cursor()
-            cursor.execute('SELECT `id` FROM `users` WHERE `id`<>?',(self.id,))
+        with conn.cursor() as cursor:
+            ##conn.autocommit = True
+            cursor.execute('SELECT "id" FROM "users" WHERE "id"<>%s',(self.id,))
             result = cursor.fetchall()
-            cursor.execute('DELETE FROM `subscriber`')
+            cursor.execute('DELETE FROM "subscriber"')
             i = 1
             for subscriber in result:
                 info = vk_session.method('users.get', {'user_ids': subscriber[0], 'name_case': 'Nom'})[0]
-                cursor.execute('INSERT INTO `subscriber` VALUES (?,?)',(subscriber[0],i))
-                db.commit()
+                cursor.execute('INSERT INTO "subscriber" VALUES (%s,%s)',(subscriber[0],i))
                 listname += '{0} - {1} {2}\n'.format(i, info['first_name'], info['last_name'])
                 i += 1
+            conn.commit()
         return listname
 
 class Events:

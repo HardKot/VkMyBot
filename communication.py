@@ -1,5 +1,4 @@
 import datetime
-import sqlite3
 
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
@@ -7,7 +6,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 from options import Users
-from options import POSTFILTERS
+from options import POSTFILTERS, conn
 from options import __TOKEN__, __DB__, __ADMINGROUP__, __POSTFILTERS__
 
 
@@ -73,13 +72,13 @@ def commands_plus(command, user):
             listname = ''
             keyboard = VkKeyboard(one_time=True)
             keyboard.add_button('Отмена', color=VkKeyboardColor.NEGATIVE)
-            vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(), 'message': 'Список \n' + user.createdSubscribe(vk_session) + 'Доступные роли: user, head, admin, test \n`Роль номер',
+            vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(), 'message': 'Список \n' + user.createdSubscribe(vk_session) + 'Доступные роли: user, head, admin, test \n"Роль номер',
                                                 'keyboard': keyboard.get_keyboard()})
             user.work('reRole')
     else:
         if user.lastCommand == 'Spam':
             if not command in ['Отмена', 'отмена']:
-                users = user.getOtherUser(' and `mailing`=1')
+                users = user.getOtherUser(' and "mailing"=1')
                 for user_id in users:
                     vk_session.method('messages.send', {'user_id': user_id, 'random_id': get_random_id(), 'message': command})
                 vk_session.method('messages.send', {'user_id': user.id, 'random_id': get_random_id(
@@ -97,13 +96,11 @@ def commands_plus(command, user):
                 else: 
                     number = command[6:]
                     role = command[:5]
-                    # Работа с sqlite##
-                sql = 'SELECT * FROM `subscriber` WHERE `number`={}'.format(number)
-                with sqlite3.connect(__DB__) as db:
-                    cursor = db.cursor()
+                sql = 'SELECT * FROM "subscriber" WHERE "number"={}'.format(number)
+                with conn.cursor() as cursor:
                     cursor.execute(sql)
                     user_id = cursor.fetchone()
-                ###################
+                    conn.commit()
                     Users(user_id[0]).reStarus(role)
                     name = vk_session.method(
                         'users.get', {'user_ids': user_id[0], 'name_case': 'Nom'})[0]
