@@ -9,6 +9,7 @@ __ADMINGROUP__ = ['admin', 'head', 'test']
 __DEBUGMODE__ = True
 __TOKEN__ = 'f242d960b5b7ed0a298ea1518a9917083ff2f436784f5fc7432fa2f3f09336c5a17da5ea3174cd4f6e151'
 __POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные']
+__ANSWER__ = '8de15fe6'
 
 def POSTFILTERS():
     i = 1
