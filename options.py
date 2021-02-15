@@ -10,7 +10,7 @@ conn = psycopg2.connect(__DB__, sslmode='require')
 
 __VERSION__ = 5.126
 __ADMINGROUP__ = ['admin', 'head', 'test']
-__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные']
+__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные', 'Практика']
 
 def POSTFILTERS():
     i = 1
