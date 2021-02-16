@@ -1,6 +1,8 @@
 import os
+import logging
+
 import psycopg2
-from psycopg2 import sql
+
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 __DB__ = os.environ['DATABASE_URL']
@@ -10,7 +12,11 @@ conn = psycopg2.connect(__DB__, sslmode='require')
 
 __VERSION__ = 5.126
 __ADMINGROUP__ = ['admin', 'head', 'test']
-__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные']
+__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные','Практика']
+
+logging.basicConfig(level=logging.INFO, 
+                    datefmt= '%y-%b-%d %H:%M:%S',
+                    format='%(levelname)s:[%(asctime)s] - [%(message)s')
 
 def POSTFILTERS():
     i = 1
@@ -189,3 +195,8 @@ class Walls:
             else:
                 message['attachment'] = message['attachment'][:-1]
         return message
+
+class CustomAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        my_context = kwargs.pop('user_id', self.extra('usert_id'))
+        return '[%s] %s' % (my_context, msg), kwargs

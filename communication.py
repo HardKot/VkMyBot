@@ -1,4 +1,4 @@
-import datetime
+
 
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
@@ -6,7 +6,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 from options import Users
-from options import POSTFILTERS, conn
+from options import POSTFILTERS, conn, logging
 from options import __TOKEN__, __DB__, __ADMINGROUP__, __POSTFILTERS__
 
 
@@ -15,7 +15,6 @@ vk_session = vk_api.VkApi(token=__TOKEN__)
 def commands(command, user):
     if not user.checkWork():
         if command in ['Начать']:
-
             vk_session.method('messages.send', {'user_id': user.id,
                                         'random_id': get_random_id(),
                                         'message': 'Йоп! Коротко пробежимся, на данный момент есть только ф-ция рассылки она оповестит тебя о чем-то. \n Красынй цвет - полность отключен \n Зеленный - полность включена.',
@@ -113,6 +112,7 @@ def commands_plus(command, user):
 
 def run(info):
     user = Users(info['id'])
+    logging.info(info['content']['message'], id=user.id)
     commands(command=info['content']['message'], user=user)
     if user.status in __ADMINGROUP__:
         commands_plus(command=info['content']['message'], user=user)
