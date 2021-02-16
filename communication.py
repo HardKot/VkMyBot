@@ -112,7 +112,7 @@ def commands_plus(command, user):
 
 def run(info):
     user = Users(info['id'])
-    logging.info(info['content']['message'], id=user.id)
+    #print(info['content']['message'], user.id)
     commands(command=info['content']['message'], user=user)
     if user.status in __ADMINGROUP__:
         commands_plus(command=info['content']['message'], user=user)

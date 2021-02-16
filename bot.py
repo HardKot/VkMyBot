@@ -1,6 +1,6 @@
 from flask import Flask, request
 #Модули с параметрами, классами
-from options import Events, logging, __ANSWER__, CHECKDB, CREATEDB
+from options import Events, __ANSWER__, CHECKDB, CREATEDB
 #Модули для обработки
 import communication
 import wall
@@ -12,8 +12,7 @@ app = Flask(__name__)
 def events():
     content = request.get_json()
     if content['type'] == 'confirmation':
-        logging.INFO('Связь с группой %s успешно установленна',
-                     content['group_id'])
+        #print('Связь с группой %s успешно установленна',content['group_id'])
         return __ANSWER__
     event = Events(content['type'], content['object'])
     if event.type == 'message_new':

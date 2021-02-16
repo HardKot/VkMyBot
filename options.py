@@ -32,7 +32,7 @@ def CREATEDB():
         conn.commit()
         cursor.execute(table_subscribe_sql)
         conn.commit()
-        cursor.execute(admin_user_sql,(__FIRSTADMIN__, 'admin', 1, ''))
+        cursor.execute(admin_user_sql, ('330315179', 'admin', 1, ''))
         conn.commit()
 
 def CHECKDB():
@@ -173,7 +173,7 @@ class Walls:
         for i in range(len(__POSTFILTERS__)):
             if text.find(__POSTFILTERS__[i]) != -1:
                 self.title = str(i + 1)
-        self.text = text[text.find('\n'):]
+        self.text = text 
         self.files = []
         if content.get('attachment'):
             for file in content['attachment']:

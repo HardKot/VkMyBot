@@ -9,8 +9,9 @@ vk_session = vk_api.VkApi(token=__TOKEN__)
 def run(info):
     wall = Walls(info['id'])
     wall.handling(info['content'])
+    #print(wall.id, '"'+wall.text+'"', wall.files)
     subscibers = []
-    with conn.cursor as cursor:
+    with conn.cursor() as cursor:
         cursor.execute('SELECT * FROM "users"')
         result = cursor.fetchall()
         conn.commit()
