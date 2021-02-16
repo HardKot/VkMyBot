@@ -12,11 +12,7 @@ conn = psycopg2.connect(__DB__, sslmode='require')
 
 __VERSION__ = 5.126
 __ADMINGROUP__ = ['admin', 'head', 'test']
-__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные','Практика']
-
-logging.basicConfig(level=logging.INFO, 
-                    datefmt= '%y-%b-%d %H:%M:%S',
-                    format='%(levelname)s:[%(asctime)s] - [%(message)s')
+__POSTFILTERS__ = ['Новости', 'Домашняя работа', 'Контрольные', 'Практика', 'Лекции']
 
 def POSTFILTERS():
     i = 1
